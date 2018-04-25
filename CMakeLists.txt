@@ -71,9 +71,15 @@ if(WIN32)
     target_compile_definitions(ebml PUBLIC HAVE_WINAPIFAMILY_H)
   endif()
 endif()
-set_target_properties(ebml PROPERTIES
-  VERSION 4.0.0
-  SOVERSION 4)
+if(APPLE)
+  set_target_properties(ebml PROPERTIES
+    VERSION 5.0.0
+    SOVERSION 5)
+else()
+  set_target_properties(ebml PROPERTIES
+    VERSION 4.0.0
+    SOVERSION 4)
+endif()
 target_include_directories(ebml PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
