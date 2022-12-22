@@ -38,7 +38,7 @@
 
 #include "EbmlTypes.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 
 #if defined(EBML_STRICT_API)
@@ -55,17 +55,16 @@ START_LIBEBML_NAMESPACE
 class EBML_DLL_API EbmlId {
   public:
     EbmlId(const binary aValue[4], const unsigned int aLength)
-      :Length(aLength)
+      :Value(0)
+      ,Length(aLength)
     {
-      Value = 0;
-      unsigned int i;
-      for (i=0; i<aLength; i++) {
+      for (unsigned int i=0; i<aLength; i++) {
         Value <<= 8;
         Value += aValue[i];
       }
     }
 
-    EbmlId(const uint32 aValue, const unsigned int aLength)
+    EbmlId(const std::uint32_t aValue, const unsigned int aLength)
       :Value(aValue), Length(aLength) {}
 
     inline bool operator==(const EbmlId & TestId) const
@@ -84,16 +83,16 @@ class EBML_DLL_API EbmlId {
       }
     }
 
-        inline size_t GetLength() const { return Length; }
-        inline uint32 GetValue() const { return Value; }
+        inline std::size_t GetLength() const { return Length; }
+        inline std::uint32_t GetValue() const { return Value; }
 
 #if defined(EBML_STRICT_API)
     private:
 #endif
-    uint32 Value;
-    size_t Length;
+    std::uint32_t Value;
+    std::size_t Length;
 };
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif // LIBEBML_ID_H

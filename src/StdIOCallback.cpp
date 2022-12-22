@@ -28,13 +28,12 @@
 
 /*!
   \file
-  \version \$Id: StdIOCallback.cpp 1298 2008-02-21 22:14:18Z mosu $
   \author Steve Lhomme     <robux4 @ users.sf.net>
   \author Moritz Bunkus <moritz @ bunkus.org>
 */
 
 #include <cassert>
-#include <climits>
+#include <limits>
 #include <sstream>
 
 #include "ebml/StdIOCallback.h"
@@ -43,7 +42,7 @@
 
 using namespace std;
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 CRTError::CRTError(int nError, const std::string & Description)
   :std::runtime_error(Description+": "+strerror(nError))
@@ -77,7 +76,7 @@ StdIOCallback::StdIOCallback(const char*Path, const open_mode aMode)
       Mode = "wb+";
       break;
     default:
-      throw 0;
+      throw std::invalid_argument("Invalid file mode supplied.");
   }
 
   File=fopen(Path,Mode);
@@ -97,59 +96,52 @@ StdIOCallback::~StdIOCallback() noexcept
 
 
 
-uint32 StdIOCallback::read(void*Buffer,size_t Size)
+std::size_t StdIOCallback::read(void*Buffer,std::size_t Size)
 {
   assert(File!=nullptr);
 
-  size_t result = fread(Buffer, 1, Size, File);
+  const std::size_t result = fread(Buffer, 1, Size, File);
   mCurrentPosition += result;
   return result;
 }
 
-void StdIOCallback::setFilePointer(int64 Offset,seek_mode Mode)
+void StdIOCallback::setFilePointer(std::int64_t Offset,seek_mode Mode)
 {
   assert(File!=nullptr);
 
-  // There is a numeric cast in the boost library, which would be quite nice for this checking
-  /*
-    SL : replaced because unknown class in cygwin
-    assert(Offset <= numeric_limits<long>::max());
-    assert(Offset >= numeric_limits<long>::min());
-  */
-
-  assert(Offset <= LONG_MAX);
-  assert(Offset >= LONG_MIN);
+  assert(Offset <= (std::numeric_limits<long>::max)());
+  assert(Offset >= (std::numeric_limits<long>::min)());
 
   assert(Mode==SEEK_CUR||Mode==SEEK_END||Mode==SEEK_SET);
 
   if(fseek(File,Offset,Mode)!=0) {
     ostringstream Msg;
-    Msg<<"Failed to seek file "<<File<<" to offset "<<static_cast<unsigned long>(Offset)<<" in mode "<<Mode;
+    Msg<<"Failed to seek file "<<File<<" to offset "<<Offset<<" in mode "<<Mode;
     throw CRTError(Msg.str());
-  } else {
-    switch ( Mode ) {
-      case SEEK_CUR:
-        mCurrentPosition += Offset;
-        break;
-      case SEEK_END:
-        mCurrentPosition = ftell(File);
-        break;
-      case SEEK_SET:
-        mCurrentPosition = Offset;
-        break;
-    }
+  }
+
+  switch ( Mode ) {
+    case SEEK_CUR:
+      mCurrentPosition += Offset;
+      break;
+    case SEEK_END:
+      mCurrentPosition = ftell(File);
+      break;
+    case SEEK_SET:
+      mCurrentPosition = Offset;
+      break;
   }
 }
 
-size_t StdIOCallback::write(const void*Buffer,size_t Size)
+std::size_t StdIOCallback::write(const void*Buffer,std::size_t Size)
 {
   assert(File!=nullptr);
-  uint32 Result = fwrite(Buffer,1,Size,File);
+  const std::uint32_t Result = fwrite(Buffer,1,Size,File);
   mCurrentPosition += Result;
   return Result;
 }
 
-uint64 StdIOCallback::getFilePointer()
+std::uint64_t StdIOCallback::getFilePointer()
 {
   assert(File!=nullptr);
 
@@ -179,4 +171,4 @@ void StdIOCallback::close()
   File=nullptr;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

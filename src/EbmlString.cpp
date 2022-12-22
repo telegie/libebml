@@ -38,7 +38,7 @@
 
 #include "ebml/EbmlString.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 EbmlString::EbmlString()
   :EbmlElement(0, false)
@@ -123,7 +123,7 @@ std::string EbmlString::GetValue() const {
   return Value;
 }
 
-uint64 EbmlString::UpdateSize(bool bWithDefault, bool /* bForceRender */)
+std::uint64_t EbmlString::UpdateSize(bool bWithDefault, bool /* bForceRender */)
 {
   if (!bWithDefault && IsDefaultValue())
     return 0;
@@ -163,4 +163,4 @@ filepos_t EbmlString::ReadData(IOCallback & input, ScopeMode ReadFully)
   return GetSize();
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

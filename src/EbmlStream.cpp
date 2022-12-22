@@ -35,20 +35,20 @@
 */
 #include "ebml/EbmlStream.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 EbmlStream::EbmlStream(IOCallback & DataStream)
   :Stream(DataStream)
 {}
 
-EbmlElement * EbmlStream::FindNextID(const EbmlCallbacks & ClassInfos, uint64 MaxDataSize)
+EbmlElement * EbmlStream::FindNextID(const EbmlCallbacks & ClassInfos, std::uint64_t MaxDataSize) const
 {
   return EbmlElement::FindNextID(Stream, ClassInfos, MaxDataSize);
 }
 
-EbmlElement * EbmlStream::FindNextElement(const EbmlSemanticContext & Context, int & UpperLevel, uint64 MaxDataSize, bool AllowDummyElt, unsigned int MaxLowerLevel)
+EbmlElement * EbmlStream::FindNextElement(const EbmlSemanticContext & Context, int & UpperLevel, std::uint64_t MaxDataSize, bool AllowDummyElt, unsigned int MaxLowerLevel) const
 {
   return EbmlElement::FindNextElement(Stream, Context, UpperLevel, MaxDataSize, AllowDummyElt, MaxLowerLevel);
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

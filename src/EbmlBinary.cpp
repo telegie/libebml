@@ -30,25 +30,35 @@
 
 /*!
   \file
-  \version \$Id$
   \author Steve Lhomme     <robux4 @ users.sf.net>
   \author Julien Coloos  <suiryc @ users.sf.net>
 */
 #include <cassert>
+#include <limits>
 #include <string>
 
 #include "ebml/EbmlBinary.h"
 #include "ebml/StdIOCallback.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 EbmlBinary::EbmlBinary()
-  :EbmlElement(0, false), Data(nullptr)
+  :EbmlElement(0, false) 
 {}
 
 EbmlBinary::EbmlBinary(const EbmlBinary & ElementToClone)
   :EbmlElement(ElementToClone)
 {
+  *this = ElementToClone;
+}
+
+EbmlBinary &
+EbmlBinary::operator=(const EbmlBinary & ElementToClone)
+{
+  if (this == &ElementToClone)  // check for self-assigment
+    return *this;
+
+  free(Data);
   if (ElementToClone.Data == nullptr)
     Data = nullptr;
   else {
@@ -56,6 +66,7 @@ EbmlBinary::EbmlBinary(const EbmlBinary & ElementToClone)
     if(Data != nullptr)
       memcpy(Data, ElementToClone.Data, GetSize());
   }
+  return *this;
 }
 
 EbmlBinary::~EbmlBinary() {
@@ -76,7 +87,7 @@ filepos_t EbmlBinary::RenderData(IOCallback & output, bool /* bForceRender */, b
 /*!
   \note no Default binary value handled
 */
-uint64 EbmlBinary::UpdateSize(bool /* bWithDefault */, bool /* bForceRender */)
+std::uint64_t EbmlBinary::UpdateSize(bool /* bWithDefault */, bool /* bForceRender */)
 {
   return GetSize();
 }
@@ -97,7 +108,7 @@ filepos_t EbmlBinary::ReadData(IOCallback & input, ScopeMode ReadFully)
     return 0;
   }
 
-  Data = (GetSize() < SIZE_MAX) ? static_cast<binary *>(malloc(GetSize())) : nullptr;
+  Data = (GetSize() < std::numeric_limits<std::size_t>::max()) ? static_cast<binary *>(malloc(GetSize())) : nullptr;
   if (Data == nullptr)
     throw CRTError(std::string("Error allocating data"));
   SetValueIsSet();
@@ -109,4 +120,4 @@ bool EbmlBinary::operator==(const EbmlBinary & ElementToCompare) const
   return ((GetSize() == ElementToCompare.GetSize()) && (GetSize() == 0 || !memcmp(Data, ElementToCompare.Data, GetSize())));
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

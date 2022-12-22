@@ -44,7 +44,7 @@
 #define INVALID_SET_FILE_POINTER ((DWORD)-1)
 #endif // INVALID_SET_FILE_POINTER
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 WinIOCallback::WinIOCallback(const char* Path, const open_mode aMode, DWORD dwFlags)
   :mFile(NULL), mOk(false)
@@ -95,7 +95,7 @@ bool WinIOCallback::open(const char* Path, const open_mode aMode, DWORD dwFlags)
   }
 
   mFile = CreateFileA(Path, AccessMode, ShareMode, NULL, Disposition, dwFlags, NULL);
-  if ((mFile == INVALID_HANDLE_VALUE) || (mFile == (HANDLE)0xffffffff)) {
+  if (mFile == INVALID_HANDLE_VALUE) {
     //File was not opened
     char err_msg[256];
     DWORD error_code = GetLastError();
@@ -146,38 +146,8 @@ bool WinIOCallback::open(const wchar_t* Path, const open_mode aMode, DWORD dwFla
       assert(false);
   }
 
-  if ((LONG)GetVersion() >= 0) {
-    mFile = CreateFileW(Path, AccessMode, ShareMode, NULL, Disposition, dwFlags, NULL);
-  } else {
-    int errCode;
-    int pathSize = wcslen(Path);
-    unsigned int bufferSize = pathSize + sizeof(wchar_t) * 2;
-    std::string PathA;
-    PathA.resize(bufferSize);
-    errCode = WideCharToMultiByte(CP_ACP, 0, Path, pathSize, (char *)PathA.c_str(), bufferSize, NULL, NULL);
-    if (errCode == 0)
-      errCode = GetLastError();
-#ifdef _DEBUG
-    if (errCode == ERROR_INSUFFICIENT_BUFFER) OutputDebugString(TEXT("WinIOCallback::WideCharToMultiByte::ERROR_INSUFFICIENT_BUFFER"));
-    if (errCode == ERROR_INVALID_FLAGS) OutputDebugString(TEXT("WinIOCallback::WideCharToMultiByte::ERROR_INVALID_FLAGS"));
-    if (errCode == ERROR_INVALID_PARAMETER) OutputDebugString(TEXT("WinIOCallback::WideCharToMultiByte::ERROR_INVALID_PARAMETER"));
-#endif
-    while (errCode == ERROR_INSUFFICIENT_BUFFER) {
-      // Increase the buffer size
-      bufferSize += MAX_PATH;
-      PathA.resize(bufferSize);
-      errCode = WideCharToMultiByte(CP_ACP, WC_SEPCHARS, Path, pathSize, (char *)PathA.c_str(), bufferSize, NULL, NULL);
-      if (errCode == 0)
-        errCode = GetLastError();
-    }
-    if (errCode != 0) {
-      mFile = CreateFileA(PathA.c_str(), AccessMode, ShareMode, NULL, Disposition, dwFlags, NULL);
-    } else {
-      mLastErrorStr = "Couldn't convert Unicode filename to ANSI.";
-      return mOk = false;
-    }
-  }
-  if ((mFile == INVALID_HANDLE_VALUE) || (mFile == (HANDLE)0xffffffff)) {
+  mFile = CreateFileW(Path, AccessMode, ShareMode, NULL, Disposition, dwFlags, NULL);
+  if (mFile == INVALID_HANDLE_VALUE) {
     //File was not opened
     char err_msg[256];
     DWORD error_code = GetLastError();
@@ -203,7 +173,7 @@ void WinIOCallback::close()
   }
 }
 
-uint64 WinIOCallback::getFilePointer()
+std::uint64_t WinIOCallback::getFilePointer()
 {
   if (!mFile) {
     return 0;
@@ -214,12 +184,12 @@ uint64 WinIOCallback::getFilePointer()
   LONG High = 0;
   DWORD Low = SetFilePointer(mFile, 0, &High, FILE_CURRENT);
   if ( (Low==INVALID_SET_FILE_POINTER) && (GetLastError()!=NO_ERROR) )
-    return static_cast<uint64>(-1);
-  return ((uint64(High)<<32) | Low);
+    return static_cast<std::uint64_t>(-1);
+  return ((std::uint64_t(High)<<32) | Low);
 #endif
 }
 
-void WinIOCallback::setFilePointer(int64 Offset, seek_mode Mode)
+void WinIOCallback::setFilePointer(std::int64_t Offset, seek_mode Mode)
 {
   DWORD Method;
   switch(Mode) {
@@ -242,13 +212,13 @@ void WinIOCallback::setFilePointer(int64 Offset, seek_mode Mode)
   if ( mCurrentPosition == INVALID_SET_FILE_POINTER ) {
     High = 0;
     DWORD Low = SetFilePointer(mFile, 0, &High, FILE_CURRENT);
-    mCurrentPosition = ((uint64(High)<<32) | Low);
+    mCurrentPosition = ((std::uint64_t(High)<<32) | Low);
   } else {
-    mCurrentPosition |= uint64(High)<<32;
+    mCurrentPosition |= std::uint64_t(High)<<32;
   }
 }
 
-uint32 WinIOCallback::read(void*Buffer,size_t Size)
+std::size_t WinIOCallback::read(void*Buffer,std::size_t Size)
 {
   DWORD BytesRead;
   if (!ReadFile(mFile, Buffer, Size, &BytesRead, NULL)) {
@@ -258,7 +228,7 @@ uint32 WinIOCallback::read(void*Buffer,size_t Size)
   return BytesRead;
 }
 
-size_t WinIOCallback::write(const void*Buffer,size_t Size)
+std::size_t WinIOCallback::write(const void*Buffer,std::size_t Size)
 {
   DWORD BytesWriten;
   if (!WriteFile(mFile, Buffer, Size, &BytesWriten, NULL)) {
@@ -273,4 +243,4 @@ bool WinIOCallback::SetEOF()
   return SetEndOfFile(mFile) != 0;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

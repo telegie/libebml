@@ -28,11 +28,12 @@
 
 /*!
   \file
-  \version \$Id: IOCallback.cpp 639 2004-07-09 20:59:14Z mosu $
   \author Steve Lhomme     <robux4 @ users.sf.net>
   \author Moritz Bunkus <moritz @ bunkus.org>
 */
 
+#include <algorithm>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 
@@ -40,9 +41,9 @@
 
 using namespace std;
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
-void IOCallback::writeFully(const void*Buffer,size_t Size)
+void IOCallback::writeFully(const void*Buffer,std::size_t Size)
 {
   if (Size == 0)
     return;
@@ -59,16 +60,23 @@ void IOCallback::writeFully(const void*Buffer,size_t Size)
 
 
 
-void IOCallback::readFully(void*Buffer,size_t Size)
+void IOCallback::readFully(void*Buffer,std::size_t Size)
 {
   if(Buffer == nullptr)
     throw;
 
-  if(read(Buffer,Size) != Size) {
-    stringstream Msg;
-    Msg<<"EOF in readFully("<<Buffer<<","<<Size<<")";
-    throw runtime_error(Msg.str());
+  auto readBuf = static_cast<char *>(Buffer);
+  auto readSize = static_cast<uint32_t>(std::min<std::size_t>(std::numeric_limits<std::uint32_t>::max(), Size));
+  while (readSize != 0) {
+    if(read(readBuf,readSize) != readSize) {
+      stringstream Msg;
+      Msg<<"EOF in readFully("<<Buffer<<","<<Size<<")";
+      throw runtime_error(Msg.str());
+    }
+    Size -= readSize;
+    readBuf += readSize;
+    readSize = static_cast<uint32_t>(std::min<std::size_t>(std::numeric_limits<std::uint32_t>::max(), Size));
   }
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

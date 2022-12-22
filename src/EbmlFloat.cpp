@@ -38,7 +38,7 @@
 
 #include "ebml/EbmlFloat.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 EbmlFloat::EbmlFloat(const EbmlFloat::Precision prec)
   :EbmlElement(0, false)
@@ -66,8 +66,8 @@ double EbmlFloat::DefaultVal() const
   return DefaultValue;
 }
 
-EbmlFloat::operator float() const {return float(Value);}
-EbmlFloat::operator double() const {return double(Value);}
+EbmlFloat::operator float() const {return static_cast<float>(Value);}
+EbmlFloat::operator double() const {return (Value);}
 
 double EbmlFloat::GetValue() const {return Value;}
 
@@ -84,23 +84,25 @@ filepos_t EbmlFloat::RenderData(IOCallback & output, bool /* bForceRender */, bo
   assert(GetSize() == 4 || GetSize() == 8);
 
   if (GetSize() == 4) {
-    float val = Value;
-    int Tmp;
+    auto val = static_cast<float>(Value);
+    std::int32_t Tmp;
     memcpy(&Tmp, &val, 4);
-    big_int32 TmpToWrite(Tmp);
-    output.writeFully(&TmpToWrite.endian(), GetSize());
+    binary TmpToWrite[4];
+    endian::to_big32(Tmp, TmpToWrite);
+    output.writeFully(TmpToWrite, 4);
   } else if (GetSize() == 8) {
     double val = Value;
-    int64 Tmp;
+    std::int64_t Tmp;
     memcpy(&Tmp, &val, 8);
-    big_int64 TmpToWrite(Tmp);
-    output.writeFully(&TmpToWrite.endian(), GetSize());
+    binary TmpToWrite[8];
+    endian::to_big64(Tmp, TmpToWrite);
+    output.writeFully(TmpToWrite, 8);
   }
 
   return GetSize();
 }
 
-uint64 EbmlFloat::UpdateSize(bool bWithDefault, bool  /* bForceRender */)
+std::uint64_t EbmlFloat::UpdateSize(bool bWithDefault, bool  /* bForceRender */)
 {
   if (!bWithDefault && IsDefaultValue())
     return 0;
@@ -126,22 +128,15 @@ filepos_t EbmlFloat::ReadData(IOCallback & input, ScopeMode ReadFully)
   input.readFully(Buffer, GetSize());
 
   if (GetSize() == 4) {
-    big_int32 TmpRead;
-    TmpRead.Eval(Buffer);
-    auto tmpp = int32(TmpRead);
+    auto tmpp = endian::from_big32(Buffer);
     float val;
     memcpy(&val, &tmpp, 4);
     Value = static_cast<double>(val);
-    SetValueIsSet();
   } else {
-    big_int64 TmpRead;
-    TmpRead.Eval(Buffer);
-    auto tmpp = int64(TmpRead);
-    double val;
-    memcpy(&val, &tmpp, 8);
-    Value = val;
-    SetValueIsSet();
+    auto tmpp = endian::from_big64(Buffer);
+    memcpy(&Value, &tmpp, 8);
   }
+  SetValueIsSet();
 
   return GetSize();
 }
@@ -154,4 +149,4 @@ bool EbmlFloat::IsSmallerThan(const EbmlElement *Cmp) const
   return false;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.1.2)
 
-project(ebml VERSION 1.4.2)
+project(ebml VERSION 2.0.0)
 
 option(DISABLE_PKGCONFIG "Disable PkgConfig module generation" OFF)
 option(DISABLE_CMAKE_CONFIG "Disable CMake package config module generation" OFF)
 option(ENABLE_WIN32_IO "Build the Windows I/O helper class" OFF)
+option(BUILD_SHARED_LIBS "Build libebml as a shared library" OFF)
 
 include(GNUInstallDirs)
 
@@ -70,9 +71,7 @@ set(libebml_PUBLIC_HEADERS
   ebml/SafeReadIOCallback.h
   ebml/StdIOCallback.h)
 
-set(libebml_C_PUBLIC_HEADERS ebml/c/libebml_t.h)
-
-add_library(ebml ${libebml_SOURCES} ${libebml_PUBLIC_HEADERS} ${libebml_C_PUBLIC_HEADERS})
+add_library(ebml ${libebml_SOURCES} ${libebml_PUBLIC_HEADERS})
 if(WIN32)
   include(CheckIncludeFile)
   check_include_file(winapifamily.h HAVE_WINAPIFAMILY_H)
@@ -81,8 +80,8 @@ if(WIN32)
   endif()
 endif()
 set_target_properties(ebml PROPERTIES
-  VERSION 5.0.0
-  SOVERSION 5
+  VERSION 6.0.0
+  SOVERSION 6
   CXX_VISIBILITY_PRESET hidden
   VISIBILITY_INLINES_HIDDEN ON
 )
@@ -91,8 +90,16 @@ target_include_directories(ebml
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-if(MSVC)
+if(WIN32)
   target_compile_definitions(ebml PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
+include(TestBigEndian)
+test_big_endian(BUILD_BIG_ENDIAN)
+if(BUILD_BIG_ENDIAN)
+  target_compile_definitions(ebml PRIVATE BUILD_BIG_ENDIAN)
+else()
+  target_compile_definitions(ebml PRIVATE BUILD_LITTLE_ENDIAN)
 endif()
 
 include(GenerateExportHeader)
@@ -113,7 +120,6 @@ install(TARGETS ebml
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 install(FILES ${libebml_PUBLIC_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ebml)
-install(FILES ${libebml_C_PUBLIC_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ebml/c)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ebml_export.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ebml)
 
 if(NOT DISABLE_PKGCONFIG)
@@ -130,12 +136,13 @@ if(NOT DISABLE_PKGCONFIG)
     set(includedir "\$\{prefix\}/${CMAKE_INSTALL_INCLUDEDIR}")
   endif()
   set(PACKAGE_VERSION ${PROJECT_VERSION})
-  if (HAVE_WINAPIFAMILY_H)
-    set(WINAPIFAMILY_PC -DHAVE_WINAPIFAMILY_H)
+
+  get_target_property(EBML_DEFINITIONS ebml INTERFACE_COMPILE_DEFINITIONS)
+  if(NOT "${EBML_DEFINITIONS}" STREQUAL "EBML_DEFINITIONS-NOTFOUND")
+    set(EBML_DEFINITIONS "-D${EBML_DEFINITIONS}")
+    list(JOIN EBML_DEFINITIONS " -D" EBML_DEFINITIONS)
   endif()
-  if(NOT BUILD_SHARED_LIBS)
-    set(STATIC_DEFINE_CFLAGS -DEBML_STATIC_DEFINE)
-  endif()
+
   configure_file(libebml.pc.in libebml.pc @ONLY)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libebml.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()

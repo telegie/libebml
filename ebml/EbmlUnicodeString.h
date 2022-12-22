@@ -43,7 +43,7 @@
 #include "EbmlTypes.h"
 #include "EbmlElement.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 /*!
   \class UTFstring
@@ -52,9 +52,9 @@ START_LIBEBML_NAMESPACE
 */
 class EBML_DLL_API UTFstring {
 public:
-  typedef wchar_t value_type;
+  using value_type = wchar_t;
 
-  UTFstring();
+  UTFstring() = default;
   UTFstring(const wchar_t *); // should be NULL terminated
   UTFstring(const UTFstring &);
   UTFstring(std::wstring const &);
@@ -70,9 +70,9 @@ public:
   UTFstring & operator=(wchar_t);
 
   /// Return length of string
-  size_t length() const {return _Length;}
+  std::size_t length() const {return _Length;}
 
-  operator const wchar_t*() const;
+  explicit operator const wchar_t*() const;
   const wchar_t* c_str() const {return _Data;}
 
   const std::string & GetUTF8() const {return UTF8string;}
@@ -83,8 +83,8 @@ public:
 #else
     protected:
 #endif
-  size_t _Length; ///< length of the UCS string excluding the \0
-  wchar_t* _Data; ///< internal UCS representation
+  std::size_t _Length{0}; ///< length of the UCS string excluding the \0
+  wchar_t* _Data{nullptr}; ///< internal UCS representation
   std::string UTF8string;
   static bool wcscmp_internal(const wchar_t *str1, const wchar_t *str2);
   void UpdateFromUTF8();
@@ -100,18 +100,15 @@ public:
 class EBML_DLL_API EbmlUnicodeString : public EbmlElement {
   public:
     EbmlUnicodeString();
-    EbmlUnicodeString(const UTFstring & DefaultValue);
-    EbmlUnicodeString(const EbmlUnicodeString & ElementToClone) = default;
+    explicit EbmlUnicodeString(const UTFstring & DefaultValue);
 
-    virtual ~EbmlUnicodeString() = default;
-
-    virtual bool ValidateSize() const {return IsFiniteSize();} // any size is possible
-    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false);
-    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully = SCOPE_ALL_DATA);
-    filepos_t UpdateSize(bool bWithDefault = false, bool bForceRender = false);
+    bool ValidateSize() const override {return IsFiniteSize();} // any size is possible
+    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false) override;
+    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully = SCOPE_ALL_DATA) override;
+    filepos_t UpdateSize(bool bWithDefault = false, bool bForceRender = false) override;
 
     EbmlUnicodeString & operator=(const UTFstring &); ///< platform dependant code
-    operator const UTFstring &() const;
+    explicit operator const UTFstring &() const;
 
     EbmlUnicodeString &SetValue(UTFstring const &NewValue);
     EbmlUnicodeString &SetValueUTF8(std::string const &NewValue);
@@ -122,7 +119,7 @@ class EBML_DLL_API EbmlUnicodeString : public EbmlElement {
 
     const UTFstring & DefaultVal() const;
 
-    bool IsDefaultValue() const {
+    bool IsDefaultValue() const override {
       return (DefaultISset() && Value == DefaultValue);
     }
 
@@ -135,6 +132,6 @@ class EBML_DLL_API EbmlUnicodeString : public EbmlElement {
     UTFstring DefaultValue;
 };
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif // LIBEBML_UNICODE_STRING_H

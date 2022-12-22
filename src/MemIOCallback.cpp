@@ -36,9 +36,9 @@
 #include "ebml/Debug.h"
 #include "ebml/EbmlConfig.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
-MemIOCallback::MemIOCallback(uint64 DefaultSize)
+MemIOCallback::MemIOCallback(std::uint64_t DefaultSize)
 {
   //The default size of the buffer is 128 bytes
   dataBuffer = static_cast<binary *>(malloc(DefaultSize));
@@ -63,7 +63,7 @@ MemIOCallback::~MemIOCallback()
     free(dataBuffer);
 }
 
-uint32 MemIOCallback::read(void *Buffer, size_t Size)
+std::size_t MemIOCallback::read(void *Buffer, std::size_t Size)
 {
   if (Buffer == nullptr || Size < 1)
     return 0;
@@ -71,7 +71,7 @@ uint32 MemIOCallback::read(void *Buffer, size_t Size)
   if (Size + dataBufferPos > dataBufferTotalSize) {
     //We will only return the remaining data
     memcpy(Buffer, dataBuffer + dataBufferPos, dataBufferTotalSize - dataBufferPos);
-    uint64 oldDataPos = dataBufferPos;
+    const std::uint64_t oldDataPos = dataBufferPos;
     dataBufferPos = dataBufferTotalSize;
     return dataBufferTotalSize - oldDataPos;
   }
@@ -83,7 +83,7 @@ uint32 MemIOCallback::read(void *Buffer, size_t Size)
   return Size;
 }
 
-void MemIOCallback::setFilePointer(int64 Offset, seek_mode Mode)
+void MemIOCallback::setFilePointer(std::int64_t Offset, seek_mode Mode)
 {
   if (Mode == seek_beginning)
     dataBufferPos = Offset;
@@ -93,11 +93,11 @@ void MemIOCallback::setFilePointer(int64 Offset, seek_mode Mode)
     dataBufferPos = dataBufferTotalSize + Offset;
 }
 
-size_t MemIOCallback::write(const void *Buffer, size_t Size)
+std::size_t MemIOCallback::write(const void *Buffer, std::size_t Size)
 {
   if (dataBufferMemorySize < dataBufferPos + Size) {
     //We need more memory!
-    dataBuffer = static_cast<binary *>(realloc((void *)dataBuffer, dataBufferPos + Size));
+    dataBuffer = static_cast<binary *>(realloc(static_cast<void *>(dataBuffer), dataBufferPos + Size));
   }
   memcpy(dataBuffer+dataBufferPos, Buffer, Size);
   dataBufferPos += Size;
@@ -107,15 +107,15 @@ size_t MemIOCallback::write(const void *Buffer, size_t Size)
   return Size;
 }
 
-uint32 MemIOCallback::write(IOCallback & IOToRead, size_t Size)
+std::uint32_t MemIOCallback::write(IOCallback & IOToRead, std::size_t Size)
 {
   if (dataBufferMemorySize < dataBufferPos + Size) {
     //We need more memory!
-    dataBuffer = static_cast<binary *>(realloc((void *)dataBuffer, dataBufferPos + Size));
+    dataBuffer = static_cast<binary *>(realloc(static_cast<void *>(dataBuffer), dataBufferPos + Size));
   }
   IOToRead.readFully(&dataBuffer[dataBufferPos], Size);
   dataBufferTotalSize = Size;
   return Size;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

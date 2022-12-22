@@ -34,43 +34,44 @@
   \author Steve Lhomme     <robux4 @ users.sf.net>
   \author Moritz Bunkus <moritz @ bunkus.org>
 */
+#include <array>
 #include <cassert>
 
 #include "ebml/EbmlUInteger.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 EbmlUInteger::EbmlUInteger()
   :EbmlElement(DEFAULT_UINT_SIZE, false)
 {}
 
-EbmlUInteger::EbmlUInteger(uint64 aDefaultValue)
+EbmlUInteger::EbmlUInteger(std::uint64_t aDefaultValue)
   :EbmlElement(DEFAULT_UINT_SIZE, true), Value(aDefaultValue), DefaultValue(aDefaultValue)
 {
   SetDefaultIsSet();
 }
 
-void EbmlUInteger::SetDefaultValue(uint64 aValue)
+void EbmlUInteger::SetDefaultValue(std::uint64_t aValue)
 {
   assert(!DefaultISset());
   DefaultValue = aValue;
   SetDefaultIsSet();
 }
 
-uint64 EbmlUInteger::DefaultVal() const
+std::uint64_t EbmlUInteger::DefaultVal() const
 {
   assert(DefaultISset());
   return DefaultValue;
 }
 
-EbmlUInteger::operator uint8()  const {return uint8(Value); }
-EbmlUInteger::operator uint16() const {return uint16(Value);}
-EbmlUInteger::operator uint32() const {return uint32(Value);}
-EbmlUInteger::operator uint64() const {return Value;}
+EbmlUInteger::operator std::uint8_t()  const {return static_cast<std::uint8_t>(Value); }
+EbmlUInteger::operator std::uint16_t() const {return static_cast<std::uint16_t>(Value);}
+EbmlUInteger::operator std::uint32_t() const {return static_cast<std::uint32_t>(Value);}
+EbmlUInteger::operator std::uint64_t() const {return Value;}
 
-uint64 EbmlUInteger::GetValue() const {return Value;}
+std::uint64_t EbmlUInteger::GetValue() const {return Value;}
 
-EbmlUInteger & EbmlUInteger::SetValue(uint64 NewValue) {
+EbmlUInteger & EbmlUInteger::SetValue(std::uint64_t NewValue) {
   return *this = NewValue;
 }
 
@@ -79,23 +80,23 @@ EbmlUInteger & EbmlUInteger::SetValue(uint64 NewValue) {
 */
 filepos_t EbmlUInteger::RenderData(IOCallback & output, bool /* bForceRender */, bool /* bWithDefault */)
 {
-  binary FinalData[8]; // we don't handle more than 64 bits integers
+  std::array<binary, 8> FinalData; // we don't handle more than 64 bits integers
 
   if (GetSizeLength() > 8)
     return 0; // integer bigger coded on more than 64 bits are not supported
 
-  uint64 TempValue = Value;
+  std::uint64_t TempValue = Value;
   for (unsigned int i=0; i<GetSize();i++) {
-    FinalData[GetSize()-i-1] = TempValue & 0xFF;
+    FinalData.at(GetSize()-i-1) = TempValue & 0xFF;
     TempValue >>= 8;
   }
 
-  output.writeFully(FinalData,GetSize());
+  output.writeFully(FinalData.data(),GetSize());
 
   return GetSize();
 }
 
-uint64 EbmlUInteger::UpdateSize(bool bWithDefault, bool /* bForceRender */)
+std::uint64_t EbmlUInteger::UpdateSize(bool bWithDefault, bool /* bForceRender */)
 {
   if (!bWithDefault && IsDefaultValue())
     return 0;
@@ -108,11 +109,11 @@ uint64 EbmlUInteger::UpdateSize(bool bWithDefault, bool /* bForceRender */)
     SetSize_(3);
   } else if (Value <= 0xFFFFFFFF) {
     SetSize_(4);
-  } else if (Value <= EBML_PRETTYLONGINT(0xFFFFFFFFFF)) {
+  } else if (Value <= 0xFFFFFFFFFFLL) {
     SetSize_(5);
-  } else if (Value <= EBML_PRETTYLONGINT(0xFFFFFFFFFFFF)) {
+  } else if (Value <= 0xFFFFFFFFFFFFLL) {
     SetSize_(6);
-  } else if (Value <= EBML_PRETTYLONGINT(0xFFFFFFFFFFFFFF)) {
+  } else if (Value <= 0xFFFFFFFFFFFFFFLL) {
     SetSize_(7);
   } else {
     SetSize_(8);
@@ -136,13 +137,13 @@ filepos_t EbmlUInteger::ReadData(IOCallback & input, ScopeMode ReadFully)
     return GetSize();
   }
 
-  binary Buffer[8];
-  input.readFully(Buffer, GetSize());
+  std::array<binary, 8> Buffer;
+  input.readFully(Buffer.data(), GetSize());
   Value = 0;
 
   for (unsigned int i=0; i<GetSize(); i++) {
     Value <<= 8;
-    Value |= Buffer[i];
+    Value |= Buffer.at(i);
   }
   SetValueIsSet();
 
@@ -157,4 +158,4 @@ bool EbmlUInteger::IsSmallerThan(const EbmlElement *Cmp) const
   return false;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

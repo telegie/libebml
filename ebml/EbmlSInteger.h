@@ -43,7 +43,7 @@
 #include "EbmlTypes.h"
 #include "EbmlElement.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 const int DEFAULT_INT_SIZE = 1; ///< optimal size stored
 
@@ -54,36 +54,35 @@ const int DEFAULT_INT_SIZE = 1; ///< optimal size stored
 class EBML_DLL_API EbmlSInteger : public EbmlElement {
   public:
     EbmlSInteger();
-    EbmlSInteger(int64 DefaultValue);
-    EbmlSInteger(const EbmlSInteger & ElementToClone) = default;
+    explicit EbmlSInteger(std::int64_t DefaultValue);
 
-    EbmlSInteger & operator = (int64 NewValue) {Value = NewValue; SetValueIsSet(); return *this;}
+    EbmlSInteger & operator = (std::int64_t NewValue) {Value = NewValue; SetValueIsSet(); return *this;}
 
     /*!
       Set the default size of the integer (usually 1,2,4 or 8)
     */
-        virtual void SetDefaultSize(uint64 nDefaultSize = DEFAULT_INT_SIZE) {EbmlElement::SetDefaultSize(nDefaultSize); SetSize_(nDefaultSize);}
+        void SetDefaultSize(std::uint64_t nDefaultSize = DEFAULT_INT_SIZE) override {EbmlElement::SetDefaultSize(nDefaultSize); SetSize_(nDefaultSize);}
 
-    virtual bool ValidateSize() const {return IsFiniteSize() && (GetSize() <= 8);}
-    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false);
-    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully = SCOPE_ALL_DATA);
-    filepos_t UpdateSize(bool bWithDefault = false, bool bForceRender = false);
+    bool ValidateSize() const override {return IsFiniteSize() && (GetSize() <= 8);}
+    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false) override;
+    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully = SCOPE_ALL_DATA) override;
+    filepos_t UpdateSize(bool bWithDefault = false, bool bForceRender = false) override;
 
-    virtual bool IsSmallerThan(const EbmlElement *Cmp) const;
+    bool IsSmallerThan(const EbmlElement *Cmp) const override;
 
-    operator int8() const;
-    operator int16() const;
-    operator int32() const;
-    operator int64() const;
+    explicit operator std::int8_t() const;
+    explicit operator std::int16_t() const;
+    explicit operator std::int32_t() const;
+    explicit operator std::int64_t() const;
 
-    EbmlSInteger &SetValue(int64 NewValue);
-    int64 GetValue() const;
+    EbmlSInteger &SetValue(std::int64_t NewValue);
+    std::int64_t GetValue() const;
 
-    void SetDefaultValue(int64 aValue) {assert(!DefaultISset()); DefaultValue = aValue; SetDefaultIsSet();}
+    void SetDefaultValue(std::int64_t aValue) {assert(!DefaultISset()); DefaultValue = aValue; SetDefaultIsSet();}
 
-    int64 DefaultVal() const {assert(DefaultISset()); return DefaultValue;}
+    std::int64_t DefaultVal() const {assert(DefaultISset()); return DefaultValue;}
 
-    bool IsDefaultValue() const {
+    bool IsDefaultValue() const override {
       return (DefaultISset() && Value == DefaultValue);
     }
 
@@ -92,10 +91,10 @@ class EBML_DLL_API EbmlSInteger : public EbmlElement {
 #else
     protected:
 #endif
-    int64 Value; /// The actual value of the element
-    int64 DefaultValue;
+    std::int64_t Value; /// The actual value of the element
+    std::int64_t DefaultValue;
 };
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif // LIBEBML_SINTEGER_H

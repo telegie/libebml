@@ -37,7 +37,7 @@
 #include "EbmlTypes.h"
 #include "EbmlElement.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 /*!
     \class EbmlDate
@@ -45,29 +45,28 @@ START_LIBEBML_NAMESPACE
 */
 class EBML_DLL_API EbmlDate : public EbmlElement {
   public:
-    EbmlDate() :EbmlElement(8, false), myDate(0) {}
-    EbmlDate(const EbmlDate & ElementToClone);
+    EbmlDate() :EbmlElement(8, false) {}
 
     /*!
       \brief set the date with a UNIX/C/EPOCH form
       \param NewDate UNIX/C date in UTC (no timezone)
     */
-    void SetEpochDate(int64 NewDate) {myDate = (NewDate - UnixEpochDelay) * 1000000000; SetValueIsSet();}
-    EbmlDate &SetValue(int64 NewValue) {SetEpochDate(NewValue); return *this;}
+    void SetEpochDate(std::int64_t NewDate) {myDate = (NewDate - UnixEpochDelay) * 1000000000; SetValueIsSet();}
+    EbmlDate &SetValue(std::int64_t NewValue) {SetEpochDate(NewValue); return *this;}
 
     /*!
       \brief get the date with a UNIX/C/EPOCH form
       \note the date is in UTC (no timezone)
     */
-    int64 GetEpochDate() const {return int64(myDate/1000000000 + UnixEpochDelay);}
-    int64 GetValue() const {return GetEpochDate();}
+    std::int64_t GetEpochDate() const {return static_cast<std::int64_t>(myDate/1000000000 + UnixEpochDelay);}
+    std::int64_t GetValue() const {return GetEpochDate();}
 
-    virtual bool ValidateSize() const {return IsFiniteSize() && ((GetSize() == 8) || (GetSize() == 0));}
+    bool ValidateSize() const override {return IsFiniteSize() && ((GetSize() == 8) || (GetSize() == 0));}
 
     /*!
       \note no Default date handled
     */
-    filepos_t UpdateSize(bool /* bWithDefault = false */, bool /* bForceRender = false */) {
+    filepos_t UpdateSize(bool /* bWithDefault = false */, bool /* bForceRender = false */) override {
       if(!ValueIsSet())
         SetSize_(0);
       else
@@ -75,11 +74,11 @@ class EBML_DLL_API EbmlDate : public EbmlElement {
       return GetSize();
     }
 
-    virtual bool IsSmallerThan(const EbmlElement *Cmp) const;
+    bool IsSmallerThan(const EbmlElement *Cmp) const override;
 
-    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully = SCOPE_ALL_DATA);
+    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully = SCOPE_ALL_DATA) override;
 
-    bool IsDefaultValue() const {
+    bool IsDefaultValue() const override {
       return false;
     }
 
@@ -88,13 +87,13 @@ class EBML_DLL_API EbmlDate : public EbmlElement {
 #else
     protected:
 #endif
-    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false);
+    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false) override;
 
-    int64 myDate; ///< internal format of the date
+    std::int64_t myDate{0}; ///< internal format of the date
 
-    static const uint64 UnixEpochDelay = 978307200; // 2001/01/01 00:00:00 UTC
+    static const std::uint64_t UnixEpochDelay = 978307200; // 2001/01/01 00:00:00 UTC
 };
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif // LIBEBML_DATE_H

@@ -35,14 +35,15 @@
 */
 
 #include <cstring>
+#include <algorithm>
 
 #include "ebml/EbmlBinary.h"
 #include "ebml/MemReadIOCallback.h"
 #include "ebml/SafeReadIOCallback.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
-SafeReadIOCallback::EndOfStreamX::EndOfStreamX(size_t MissingBytes)
+SafeReadIOCallback::EndOfStreamX::EndOfStreamX(std::size_t MissingBytes)
   : mMissingBytes(MissingBytes)
 {
 }
@@ -55,7 +56,7 @@ SafeReadIOCallback::SafeReadIOCallback(IOCallback *IO,
 }
 
 SafeReadIOCallback::SafeReadIOCallback(void const *Mem,
-                                       size_t Size) {
+                                       std::size_t Size) {
   Init(new MemReadIOCallback(Mem, Size), true);
 }
 
@@ -73,25 +74,25 @@ SafeReadIOCallback::Init(IOCallback *IO,
                          bool DeleteIO) {
   mIO                = IO;
   mDeleteIO          = DeleteIO;
-  int64 PrevPosition = IO->getFilePointer();
+  const std::int64_t PrevPosition = IO->getFilePointer();
   IO->setFilePointer(0, seek_end);
   mSize              = IO->getFilePointer();
   IO->setFilePointer(PrevPosition);
 }
 
-size_t
+std::size_t
 SafeReadIOCallback::GetPosition()
   const {
   return mIO->getFilePointer();
 }
 
-size_t
+std::size_t
 SafeReadIOCallback::GetSize()
   const {
   return mSize;
 }
 
-size_t
+std::size_t
 SafeReadIOCallback::GetRemainingBytes()
   const {
   return GetSize() - GetPosition();
@@ -103,72 +104,72 @@ SafeReadIOCallback::IsEmpty()
   return !GetRemainingBytes();
 }
 
-uint64
-SafeReadIOCallback::GetUIntBE(size_t NumBytes) {
-  uint8 Buffer[8];
+std::uint64_t
+SafeReadIOCallback::GetUIntBE(std::size_t NumBytes) {
+  std::uint8_t Buffer[8];
 
-  NumBytes     = std::min<size_t>(std::max<size_t>(1, NumBytes), 8);
-  uint64 Value = 0;
-  uint8* Ptr   = &Buffer[0];
+  NumBytes     = std::min<std::size_t>(std::max<std::size_t>(1, NumBytes), 8);
+  std::uint64_t Value = 0;
+  std::uint8_t* Ptr   = &Buffer[0];
 
   Read(Buffer, NumBytes);
 
-  for (size_t i = 0; NumBytes > i; ++i, ++Ptr)
+  for (std::size_t i = 0; NumBytes > i; ++i, ++Ptr)
     Value = (Value << 8) + *Ptr;
 
   return Value;
 }
 
-uint8
+std::uint8_t
 SafeReadIOCallback::GetUInt8() {
-  return GetUIntBE(1);
+  return static_cast<std::uint8_t>(GetUIntBE(1));
 }
 
-uint16
+std::uint16_t
 SafeReadIOCallback::GetUInt16BE() {
-  return GetUIntBE(2);
+  return static_cast<std::uint16_t>(GetUIntBE(2));
 }
 
-uint32
+std::uint32_t
 SafeReadIOCallback::GetUInt24BE() {
-  return GetUIntBE(3);
+  return static_cast<std::uint32_t>(GetUIntBE(3));
 }
 
-uint32
+std::uint32_t
 SafeReadIOCallback::GetUInt32BE() {
-  return GetUIntBE(4);
+  return static_cast<std::uint32_t>(GetUIntBE(4));
 }
 
-uint64
+std::uint64_t
 SafeReadIOCallback::GetUInt64BE() {
   return GetUIntBE(8);
 }
 
 void
-SafeReadIOCallback::Skip(size_t Count) {
-  int64 PrevPosition     = mIO->getFilePointer();
-  int64 ExpectedPosition = PrevPosition + Count;
+SafeReadIOCallback::Skip(std::size_t Count) {
+  const std::int64_t PrevPosition     = mIO->getFilePointer();
+  const std::int64_t ExpectedPosition = PrevPosition + Count;
   mIO->setFilePointer(Count, seek_current);
-  int64 ActualPosition   = mIO->getFilePointer();
+  const std::int64_t ActualPosition   = mIO->getFilePointer();
 
   if (ActualPosition != ExpectedPosition)
     throw SafeReadIOCallback::EndOfStreamX(ExpectedPosition - ActualPosition);
 }
 
 void
-SafeReadIOCallback::Seek(size_t Position) {
+SafeReadIOCallback::Seek(std::size_t Position) {
   mIO->setFilePointer(Position);
-  uint64 ActualPosition = mIO->getFilePointer();
+  const std::uint64_t ActualPosition = mIO->getFilePointer();
   if (ActualPosition != Position)
     throw EndOfStreamX(ActualPosition - Position);
 }
 
 void
 SafeReadIOCallback::Read(void *Dst,
-                       size_t Count) {
-  uint64 NumRead = mIO->read(Dst, Count);
+                       std::size_t Count) {
+ const std::uint64_t NumRead = mIO->read(Dst, Count);
   if (NumRead != Count)
     throw SafeReadIOCallback::EndOfStreamX(Count - NumRead);
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

@@ -35,14 +35,15 @@
 */
 
 #include <cstring>
+#include <algorithm>
 
 #include "ebml/EbmlBinary.h"
 #include "ebml/MemReadIOCallback.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 MemReadIOCallback::MemReadIOCallback(void const *Ptr,
-                                     size_t Size) {
+                                     std::size_t Size) {
   Init(Ptr, Size);
 }
 
@@ -56,16 +57,16 @@ MemReadIOCallback::MemReadIOCallback(MemReadIOCallback const &Mem) {
 
 void
 MemReadIOCallback::Init(void const *Ptr,
-                        size_t Size) {
-  mStart = reinterpret_cast<uint8 const *>(Ptr);
+                        std::size_t Size) {
+  mStart = reinterpret_cast<std::uint8_t const *>(Ptr);
   mEnd   = mStart + Size;
   mPtr   = mStart;
 }
 
-uint32
+std::size_t
 MemReadIOCallback::read(void *Buffer,
-                        size_t Size) {
-  size_t RemainingBytes = mEnd - mPtr;
+                        std::size_t Size) {
+  const std::size_t RemainingBytes = mEnd - mPtr;
   if (RemainingBytes < Size)
     Size = RemainingBytes;
 
@@ -76,14 +77,14 @@ MemReadIOCallback::read(void *Buffer,
 }
 
 void
-MemReadIOCallback::setFilePointer(int64 Offset,
+MemReadIOCallback::setFilePointer(std::int64_t Offset,
                                   seek_mode Mode) {
-  int64 NewPosition = Mode == seek_beginning ? Offset
-                    : Mode == seek_end       ? static_cast<int64>(mEnd - mStart) + Offset
-                    :                          static_cast<int64>(mPtr - mStart) + Offset;
+  std::int64_t NewPosition = Mode == seek_beginning ? Offset
+                    : Mode == seek_end       ? static_cast<std::int64_t>(mEnd - mStart) + Offset
+                    :                          static_cast<std::int64_t>(mPtr - mStart) + Offset;
 
-  NewPosition = std::min<int64>(std::max<int64>(NewPosition, 0), mEnd - mStart);
+  NewPosition = std::min<std::int64_t>(std::max<std::int64_t>(NewPosition, 0), mEnd - mStart);
   mPtr = mStart + NewPosition;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

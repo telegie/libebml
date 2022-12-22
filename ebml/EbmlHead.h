@@ -39,15 +39,13 @@
 #include "EbmlTypes.h"
 #include "EbmlMaster.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 DECLARE_EBML_MASTER(EbmlHead)
   public:
-    EbmlHead(const EbmlHead & ElementToClone) : EbmlMaster(ElementToClone) {}
-
         EBML_CONCRETE_CLASS(EbmlHead)
 };
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif // LIBEBML_HEAD_H

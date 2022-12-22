@@ -28,38 +28,35 @@
 
 /*!
   \file
-  \version \$Id: EbmlTypes.h 639 2004-07-09 20:59:14Z mosu $
 */
 #ifndef LIBEBML_TYPES_H
 #define LIBEBML_TYPES_H
 
-#include "ebml/c/libebml_t.h"
+#include <cstdint>
+
 #include "ebml/EbmlConfig.h"
+
+using int64  = std::int64_t;
+using int32  = std::int32_t;
+using int16  = std::int16_t;
+using int8   = std::int8_t;
+using uint64 = std::uint64_t;
+using uint32 = std::uint32_t;
+using uint16 = std::uint16_t;
+using uint8  = std::uint8_t;
+using binary = std::uint8_t;
+using filepos_t = std::uint64_t;
+
+enum open_mode {
+    MODE_READ,
+    MODE_WRITE,
+    MODE_CREATE,
+    MODE_SAFE
+};
+
 #include "EbmlEndian.h" // binary needs to be defined
 
-START_LIBEBML_NAMESPACE
-
-typedef wchar_t utf16;
-typedef uint32 utf32;
-typedef char utf8;
-
-typedef binary bits80[10];
-
-typedef Endian<int16,little_endian>  lil_int16;
-typedef Endian<int32,little_endian>  lil_int32;
-typedef Endian<int64,little_endian>  lil_int64;
-typedef Endian<uint16,little_endian> lil_uint16;
-typedef Endian<uint32,little_endian> lil_uint32;
-typedef Endian<uint64,little_endian> lil_uint64;
-typedef Endian<int16,big_endian>     big_int16;
-typedef Endian<int32,big_endian>     big_int32;
-typedef Endian<int64,big_endian>     big_int64;
-typedef Endian<uint16,big_endian>    big_uint16;
-typedef Endian<uint32,big_endian>    big_uint32;
-typedef Endian<uint64,big_endian>    big_uint64;
-typedef Endian<uint32,big_endian>    checksum;
-typedef Endian<bits80,big_endian>    big_80bits;
-
+namespace libebml {
 
 enum ScopeMode {
   SCOPE_PARTIAL_DATA = 0,
@@ -67,6 +64,6 @@ enum ScopeMode {
   SCOPE_NO_DATA
 };
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif

@@ -48,7 +48,7 @@
 #define EBML_MASTER_RITERATOR std::vector<EbmlElement *>::reverse_iterator
 #define EBML_MASTER_CONST_RITERATOR std::vector<EbmlElement *>::const_reverse_iterator
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 const bool bChecksumUsedByDefault = false;
 
@@ -58,32 +58,32 @@ const bool bChecksumUsedByDefault = false;
 */
 class EBML_DLL_API EbmlMaster : public EbmlElement {
   public:
-    EbmlMaster(const EbmlSemanticContext & aContext, bool bSizeIsKnown = true);
+    explicit EbmlMaster(const EbmlSemanticContext & aContext, bool bSizeIsKnown = true);
     EbmlMaster(const EbmlMaster & ElementToClone);
-    virtual bool ValidateSize() const {return true;}
+    EbmlMaster& operator=(const EbmlMaster&) = delete;
+    bool ValidateSize() const override {return true;}
     /*!
       \warning be carefull to clear the memory allocated in the ElementList elsewhere
     */
-    virtual ~EbmlMaster();
+    ~EbmlMaster() override;
 
-    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false);
-    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully);
-    filepos_t UpdateSize(bool bWithDefault = false, bool bForceRender = false);
+    filepos_t RenderData(IOCallback & output, bool bForceRender, bool bWithDefault = false) override;
+    filepos_t ReadData(IOCallback & input, ScopeMode ReadFully) override;
+    filepos_t UpdateSize(bool bWithDefault = false, bool bForceRender = false) override;
 
     /*!
       \brief Set wether the size is finite (size is known in advance when writing, or infinite size is not known on writing)
     */
-    bool SetSizeInfinite(bool aIsInfinite = true) {SetSizeIsFinite(!aIsInfinite); return true;}
+    bool SetSizeInfinite(bool aIsInfinite = true) override {SetSizeIsFinite(!aIsInfinite); return true;}
 
     bool PushElement(EbmlElement & element);
-    uint64 GetSize() const {
+    std::uint64_t GetSize() const override {
       if (IsFiniteSize())
-                return EbmlElement::GetSize();
-      else
-        return (0-1);
+        return EbmlElement::GetSize();
+      return (0-1);
     }
 
-    uint64 GetDataStart() const {
+    std::uint64_t GetDataStart() const {
       return GetElementPosition() + EBML_ID_LENGTH((const EbmlId&)*this) + CodedSizeLength(EbmlElement::GetSize(), GetSizeLength(), IsFiniteSize());
     }
 
@@ -107,20 +107,20 @@ class EBML_DLL_API EbmlMaster : public EbmlElement {
     /*!
       \brief add an element at a specified location
     */
-    bool InsertElement(EbmlElement & element, size_t position = 0);
+    bool InsertElement(EbmlElement & element, std::size_t position = 0);
     bool InsertElement(EbmlElement & element, const EbmlElement & before);
 
     /*!
       \brief Read the data and keep the known children
     */
-    void Read(EbmlStream & inDataStream, const EbmlSemanticContext & Context, int & UpperEltFound, EbmlElement * & FoundElt, bool AllowDummyElt, ScopeMode ReadFully = SCOPE_ALL_DATA);
+    void Read(EbmlStream & inDataStream, const EbmlSemanticContext & Context, int & UpperEltFound, EbmlElement * & FoundElt, bool AllowDummyElt, ScopeMode ReadFully = SCOPE_ALL_DATA) override;
 
     /*!
       \brief sort Data when they can
     */
     void Sort();
 
-    size_t ListSize() const {return ElementList.size();}
+    std::size_t ListSize() const {return ElementList.size();}
     std::vector<EbmlElement *> const &GetElementList() const {return ElementList;}
     std::vector<EbmlElement *> &GetElementList() {return ElementList;}
 
@@ -136,10 +136,10 @@ class EBML_DLL_API EbmlMaster : public EbmlElement {
     EbmlElement * operator[](unsigned int position) {return ElementList[position];}
     const EbmlElement * operator[](unsigned int position) const {return ElementList[position];}
 
-    bool IsDefaultValue() const {
-      return (ElementList.size() == 0);
+    bool IsDefaultValue() const override {
+      return (ElementList.empty());
     }
-    virtual bool IsMaster() const {return true;}
+    bool IsMaster() const override {return true;}
 
     /*!
       \brief verify that all mandatory elements are present
@@ -150,7 +150,7 @@ class EBML_DLL_API EbmlMaster : public EbmlElement {
     /*!
       \brief Remove an element from the list of the master
     */
-    void Remove(size_t Index);
+    void Remove(std::size_t Index);
     void Remove(EBML_MASTER_ITERATOR & Itr);
     void Remove(EBML_MASTER_RITERATOR & Itr);
 
@@ -167,8 +167,8 @@ class EBML_DLL_API EbmlMaster : public EbmlElement {
     void EnableChecksum(bool bIsEnabled = true) { bChecksumUsed = bIsEnabled; }
     bool HasChecksum() const {return bChecksumUsed;}
     bool VerifyChecksum() const;
-    uint32 GetCrc32() const {return Checksum.GetCrc32();}
-    void ForceChecksum(uint32 NewChecksum) {
+    std::uint32_t GetCrc32() const {return Checksum.GetCrc32();}
+    void ForceChecksum(std::uint32_t NewChecksum) {
       Checksum.ForceCrc32(NewChecksum);
       bChecksumUsed = true;
     }
@@ -176,7 +176,7 @@ class EBML_DLL_API EbmlMaster : public EbmlElement {
     /*!
       \brief drill down all sub-elements, finding any missing elements
     */
-    std::vector<std::string> FindAllMissingElements();
+    std::vector<std::string> FindAllMissingElements() const;
 
 #if defined(EBML_STRICT_API)
     private:
@@ -230,6 +230,6 @@ Type & AddNewChild(EbmlMaster & Master)
   return *(static_cast<Type *>(Master.AddNewElt(EBML_INFO(Type))));
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif // LIBEBML_MASTER_H

@@ -30,7 +30,6 @@
 
 /*!
   \file
-  \version \$Id$
   \author Steve Lhomme     <robux4 @ users.sf.net>
   \author Jory Stone       <jcsston @ toughguy.net>
 */
@@ -42,25 +41,16 @@
 
 #include "lib/utf8-cpp/source/utf8/checked.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 // ===================== UTFstring class ===================
 
-UTFstring::UTFstring()
-  :_Length(0)
-  ,_Data(nullptr)
-{}
-
 UTFstring::UTFstring(const wchar_t * _aBuf)
-  :_Length(0)
-  ,_Data(nullptr)
 {
   *this = _aBuf;
 }
 
 UTFstring::UTFstring(std::wstring const &_aBuf)
-  :_Length(0)
-  ,_Data(nullptr)
 {
   *this = _aBuf.c_str();
 }
@@ -71,8 +61,6 @@ UTFstring::~UTFstring()
 }
 
 UTFstring::UTFstring(const UTFstring & _aBuf)
-  :_Length(0)
-  ,_Data(nullptr)
 {
   *this = _aBuf.c_str();
 }
@@ -96,7 +84,7 @@ UTFstring & UTFstring::operator=(const wchar_t * _aBuf)
     return *this;
   }
 
-  size_t aLen;
+  std::size_t aLen;
   for (aLen=0; _aBuf[aLen] != 0; aLen++);
   _Length = aLen;
   _Data = new wchar_t[_Length+1];
@@ -140,9 +128,7 @@ void UTFstring::SetUTF8(const std::string & _aStr)
 void UTFstring::UpdateFromUTF8()
 {
   // Only convert up to the first \0 character if present.
-  std::string::iterator End = UTF8string.end(), Current = UTF8string.begin();
-  while ((Current != End) && *Current)
-    ++Current;
+  auto Current = std::find(UTF8string.begin(), UTF8string.end(), '\0');
 
   std::wstring Temp;
   try {
@@ -173,7 +159,7 @@ void UTFstring::UpdateFromUCS2()
     return;
 
   // Only convert up to the first \0 character if present.
-  size_t Current = 0;
+  std::size_t Current = 0;
   while ((Current < _Length) && _Data[Current])
     ++Current;
 
@@ -193,7 +179,7 @@ void UTFstring::UpdateFromUCS2()
 
 bool UTFstring::wcscmp_internal(const wchar_t *str1, const wchar_t *str2)
 {
-  size_t Index=0;
+  std::size_t Index=0;
   while (str1[Index] == str2[Index] && str1[Index] != 0) {
     Index++;
   }
@@ -235,7 +221,7 @@ const UTFstring & EbmlUnicodeString::DefaultVal() const
 */
 filepos_t EbmlUnicodeString::RenderData(IOCallback & output, bool /* bForceRender */, bool /* bWithDefault */)
 {
-  uint32 Result = Value.GetUTF8().length();
+  std::size_t Result = Value.GetUTF8().length();
 
   if (Result != 0) {
     output.writeFully(Value.GetUTF8().c_str(), Result);
@@ -286,7 +272,7 @@ std::string EbmlUnicodeString::GetValueUTF8() const {
 /*!
 \note limited to UCS-2
 */
-uint64 EbmlUnicodeString::UpdateSize(bool bWithDefault, bool /* bForceRender */)
+std::uint64_t EbmlUnicodeString::UpdateSize(bool bWithDefault, bool /* bForceRender */)
 {
   if (!bWithDefault && IsDefaultValue())
     return 0;
@@ -307,7 +293,7 @@ filepos_t EbmlUnicodeString::ReadData(IOCallback & input, ScopeMode ReadFully)
     return GetSize();
 
   if (GetSize() == 0) {
-    Value = UTFstring::value_type(0);
+    Value = static_cast<UTFstring::value_type>(0);
     SetValueIsSet();
   } else {
     auto Buffer = (GetSize() + 1 < std::numeric_limits<std::size_t>::max()) ? new (std::nothrow) char[GetSize()+1] : nullptr;
@@ -329,4 +315,4 @@ filepos_t EbmlUnicodeString::ReadData(IOCallback & input, ScopeMode ReadFully)
   return GetSize();
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

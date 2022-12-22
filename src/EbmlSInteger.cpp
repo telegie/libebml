@@ -32,8 +32,10 @@
   \author Steve Lhomme     <robux4 @ users.sf.net>
   \author Moritz Bunkus <moritz @ bunkus.org>
 */
+#include <array>
 #include <cassert>
 #include <limits>
+#include <cstdint>
 
 #include "ebml/EbmlSInteger.h"
 
@@ -43,36 +45,36 @@
 
 namespace {
 
-int64
-ToSigned(uint64 u) {
-  if (u <= static_cast<uint64>(std::numeric_limits<int64>::max()))
-    return static_cast<int64>(u);
+std::int64_t
+ToSigned(std::uint64_t u) {
+  if (u <= static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()))
+    return static_cast<std::int64_t>(u);
 
-  return static_cast<int64>(u - std::numeric_limits<int64>::min()) + std::numeric_limits<int64>::min();
+  return static_cast<std::int64_t>(u - std::numeric_limits<std::int64_t>::min()) + std::numeric_limits<std::int64_t>::min();
 }
 
 } // namespace
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 EbmlSInteger::EbmlSInteger()
   :EbmlElement(DEFAULT_INT_SIZE, false)
 {}
 
-EbmlSInteger::EbmlSInteger(int64 aDefaultValue)
+EbmlSInteger::EbmlSInteger(std::int64_t aDefaultValue)
   :EbmlElement(DEFAULT_INT_SIZE, true), Value(aDefaultValue)
 {
   SetDefaultIsSet();
 }
 
-EbmlSInteger::operator int8() const {return  int8(Value);}
-EbmlSInteger::operator int16() const {return int16(Value);}
-EbmlSInteger::operator int32() const {return int32(Value);}
-EbmlSInteger::operator int64() const {return Value;}
+EbmlSInteger::operator std::int8_t() const {return  static_cast<std::int8_t>(Value);}
+EbmlSInteger::operator std::int16_t() const {return static_cast<std::int16_t>(Value);}
+EbmlSInteger::operator std::int32_t() const {return static_cast<std::int32_t>(Value);}
+EbmlSInteger::operator std::int64_t() const {return Value;}
 
-int64 EbmlSInteger::GetValue() const {return Value;}
+std::int64_t EbmlSInteger::GetValue() const {return Value;}
 
-EbmlSInteger & EbmlSInteger::SetValue(int64 NewValue) {
+EbmlSInteger & EbmlSInteger::SetValue(std::int64_t NewValue) {
   return *this = NewValue;
 }
 
@@ -81,24 +83,24 @@ EbmlSInteger & EbmlSInteger::SetValue(int64 NewValue) {
 */
 filepos_t EbmlSInteger::RenderData(IOCallback & output, bool /* bForceRender */, bool /* bWithDefault */)
 {
-  binary FinalData[8]; // we don't handle more than 64 bits integers
+  std::array<binary, 8> FinalData; // we don't handle more than 64 bits integers
   unsigned int i;
 
   if (GetSizeLength() > 8)
     return 0; // integer bigger coded on more than 64 bits are not supported
 
-  int64 TempValue = Value;
+  std::int64_t TempValue = Value;
   for (i=0; i<GetSize();i++) {
-    FinalData[GetSize()-i-1] = binary(TempValue & 0xFF);
+    FinalData.at(GetSize()-i-1) = static_cast<binary>(TempValue & 0xFF);
     TempValue >>= 8;
   }
 
-  output.writeFully(FinalData,GetSize());
+  output.writeFully(FinalData.data(),GetSize());
 
   return GetSize();
 }
 
-uint64 EbmlSInteger::UpdateSize(bool bWithDefault, bool /* bForceRender */)
+std::uint64_t EbmlSInteger::UpdateSize(bool bWithDefault, bool /* bForceRender */)
 {
   if (!bWithDefault && IsDefaultValue())
     return 0;
@@ -109,16 +111,16 @@ uint64 EbmlSInteger::UpdateSize(bool bWithDefault, bool /* bForceRender */)
     SetSize_(2);
   } else if (Value <= 0x7FFFFF && Value >= (-0x800000)) {
     SetSize_(3);
-  } else if (Value <= EBML_PRETTYLONGINT(0x7FFFFFFF) && Value >= (EBML_PRETTYLONGINT(-0x80000000))) {
+  } else if (Value <= INT64_C(0x7FFFFFFF) && Value >= (INT64_C(-0x80000000))) {
     SetSize_(4);
-  } else if (Value <= EBML_PRETTYLONGINT(0x7FFFFFFFFF) &&
-             Value >= EBML_PRETTYLONGINT(-0x8000000000)) {
+  } else if (Value <= INT64_C(0x7FFFFFFFFF) &&
+             Value >= INT64_C(-0x8000000000)) {
     SetSize_(5);
-  } else if (Value <= EBML_PRETTYLONGINT(0x7FFFFFFFFFFF) &&
-             Value >= EBML_PRETTYLONGINT(-0x800000000000)) {
+  } else if (Value <= INT64_C(0x7FFFFFFFFFFF) &&
+             Value >= INT64_C(-0x800000000000)) {
     SetSize_(6);
-  } else if (Value <= EBML_PRETTYLONGINT(0x7FFFFFFFFFFFFF) &&
-             Value >= EBML_PRETTYLONGINT(-0x80000000000000)) {
+  } else if (Value <= INT64_C(0x7FFFFFFFFFFFFF) &&
+             Value >= INT64_C(-0x80000000000000)) {
     SetSize_(7);
   } else {
     SetSize_(8);
@@ -142,14 +144,14 @@ filepos_t EbmlSInteger::ReadData(IOCallback & input, ScopeMode ReadFully)
     return GetSize();
   }
 
-  binary Buffer[8];
-  input.readFully(Buffer, GetSize());
+  std::array<binary, 8> Buffer;
+  input.readFully(Buffer.data(), GetSize());
 
-  uint64 TempValue = Buffer[0] & 0x80 ? std::numeric_limits<uint64>::max() : 0;
+  std::uint64_t TempValue = Buffer[0] & 0x80 ? std::numeric_limits<std::uint64_t>::max() : 0;
 
   for (unsigned int i=0; i<GetSize(); i++) {
     TempValue <<= 8;
-    TempValue |= Buffer[i];
+    TempValue |= Buffer.at(i);
   }
 
   Value = ToSigned(TempValue);
@@ -166,4 +168,4 @@ bool EbmlSInteger::IsSmallerThan(const EbmlElement *Cmp) const
   return false;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml

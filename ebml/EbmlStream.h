@@ -40,7 +40,7 @@
 #include "IOCallback.h"
 #include "EbmlElement.h"
 
-START_LIBEBML_NAMESPACE
+namespace libebml {
 
 /*!
     \class EbmlStream
@@ -49,16 +49,14 @@ START_LIBEBML_NAMESPACE
 class EBML_DLL_API EbmlStream {
   public:
     EbmlStream(IOCallback & DataStream);
-    ~EbmlStream() = default;
-
     /*!
       \brief Find a possible next ID in the data stream
       \param MaxDataSize The maximum possible of the data in the element (for sanity checks)
       \note the user will have to delete that element later
     */
-    EbmlElement * FindNextID(const EbmlCallbacks & ClassInfos, uint64 MaxDataSize);
+    EbmlElement * FindNextID(const EbmlCallbacks & ClassInfos, std::uint64_t MaxDataSize) const;
 
-    EbmlElement * FindNextElement(const EbmlSemanticContext & Context, int & UpperLevel, uint64 MaxDataSize, bool AllowDummyElt, unsigned int MaxLowerLevel = 1);
+    EbmlElement * FindNextElement(const EbmlSemanticContext & Context, int & UpperLevel, std::uint64_t MaxDataSize, bool AllowDummyElt, unsigned int MaxLowerLevel = 1) const;
 
     inline IOCallback & I_O() {return Stream;}
         operator IOCallback &() {return Stream;}
@@ -71,6 +69,6 @@ class EBML_DLL_API EbmlStream {
     IOCallback & Stream;
 };
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
 
 #endif // LIBEBML_STREAM_H

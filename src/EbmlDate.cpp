@@ -28,20 +28,13 @@
 
 /*!
   \file
-  \version \$Id: EbmlDate.cpp 1079 2005-03-03 13:18:14Z robux4 $
   \author Steve Lhomme     <robux4 @ users.sf.net>
 */
 #include <cassert>
 
 #include "ebml/EbmlDate.h"
 
-START_LIBEBML_NAMESPACE
-
-EbmlDate::EbmlDate(const EbmlDate & ElementToClone)
-:EbmlElement(ElementToClone)
-{
-  myDate = ElementToClone.myDate;
-}
+namespace libebml {
 
 filepos_t EbmlDate::ReadData(IOCallback & input, ScopeMode ReadFully)
 {
@@ -58,21 +51,19 @@ filepos_t EbmlDate::ReadData(IOCallback & input, ScopeMode ReadFully)
   binary Buffer[8];
   input.readFully(Buffer, GetSize());
 
-  big_int64 b64;
-  b64.Eval(Buffer);
-
-  myDate = b64;
+  myDate = endian::from_big64(Buffer);
   SetValueIsSet();
   return GetSize();
 }
 
 filepos_t EbmlDate::RenderData(IOCallback & output, bool /* bForceRender */, bool  /* bWithDefault */)
 {
-  if (GetSize() != 0) {
-    assert(GetSize() == 8);
-    big_int64 b64(myDate);
+  assert(GetSize() == 8 || GetSize() == 0);
+  if (GetSize() == 8) {
+    binary b64[8];
+    endian::to_big64(myDate, b64);
 
-    output.writeFully(&b64.endian(),GetSize());
+    output.writeFully(b64,8);
   }
 
   return GetSize();
@@ -86,4 +77,4 @@ bool EbmlDate::IsSmallerThan(const EbmlElement *Cmp) const
   return false;
 }
 
-END_LIBEBML_NAMESPACE
+} // namespace libebml
